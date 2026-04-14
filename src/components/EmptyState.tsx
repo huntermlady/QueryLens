@@ -38,15 +38,8 @@ export function EmptyState({ onRunExample, theme }: EmptyStateProps) {
         >
           Ready for Kickoff
         </h3>
-        <p className="text-sm leading-relaxed max-w-xs" style={{ color: muted }}>
-          Write a SQL query against{' '}
-          <code
-            className="text-xs px-1.5 py-0.5 rounded"
-            style={{ fontFamily: 'var(--font-mono)', background: cardBg, border: `1px solid ${border}`, color: fg }}
-          >
-            draft_picks
-          </code>{' '}
-          and press{' '}
+        <p className="text-sm leading-relaxed max-w-sm" style={{ color: muted }}>
+          Query 7 built-in NFL data tables or upload a CSV to add your own. Press{' '}
           <kbd
             className="px-1.5 py-0.5 text-xs rounded"
             style={{ fontFamily: 'var(--font-mono)', background: cardBg, border: `1px solid ${border}`, color: fg }}

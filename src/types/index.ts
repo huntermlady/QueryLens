@@ -25,6 +25,13 @@ export interface ExampleQuery {
   sql: string
 }
 
+export interface UploadedTable {
+  name: string          // sanitized AlaSQL table name
+  originalName: string  // original filename
+  rowCount: number
+  columns: string[]
+}
+
 export interface DraftPickRow {
   season: number
   team: string

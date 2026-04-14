@@ -1,6 +1,6 @@
 import alasql from 'alasql'
 import Papa from 'papaparse'
-import type { ColumnMeta, ColumnKind, QueryResult } from '@/types'
+import type { ColumnMeta, ColumnKind, QueryResult, UploadedTable } from '@/types'
 
 // ── Table registry ────────────────────────────────────────────────────────────
 
@@ -80,6 +80,72 @@ export async function initDataset(onProgress?: ProgressCallback): Promise<void> 
 
   onProgress?.(TABLES.length, TABLES.length, 'Done')
   initialized = true
+}
+
+// ── CSV upload ────────────────────────────────────────────────────────────────
+
+export const uploadedTables: UploadedTable[] = []
+
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024 // 50 MB
+
+function sanitizeTableName(filename: string): string {
+  return filename
+    .replace(/\.csv$/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/^([0-9])/, 't$1') // can't start with a digit
+}
+
+function uniqueTableName(base: string): string {
+  const taken = new Set([
+    ...TABLES.map(t => t.name),
+    ...uploadedTables.map(t => t.name),
+  ])
+  if (!taken.has(base)) return base
+  let i = 2
+  while (taken.has(`${base}_${i}`)) i++
+  return `${base}_${i}`
+}
+
+export async function uploadTable(file: File): Promise<UploadedTable> {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(
+      `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — maximum allowed size is 50 MB.`
+    )
+  }
+
+  const text = await file.text()
+  const { data, errors } = Papa.parse<Record<string, string>>(text, {
+    header: true,
+    skipEmptyLines: true,
+  })
+
+  if (errors.length > 0) {
+    console.warn(`[upload:${file.name}] parse warnings:`, errors.slice(0, 3))
+  }
+
+  if (data.length === 0) {
+    throw new Error('The CSV file appears to be empty or has no data rows.')
+  }
+
+  const rows = data.map(row => {
+    const coerced: Record<string, string | number | null> = {}
+    for (const key of Object.keys(row)) coerced[key] = coerce(row[key])
+    return coerced
+  })
+
+  const tableName = uniqueTableName(sanitizeTableName(file.name))
+  alasql(`CREATE TABLE IF NOT EXISTS ${tableName}`)
+  alasql.tables[tableName].data = rows
+
+  const meta: UploadedTable = {
+    name: tableName,
+    originalName: file.name,
+    rowCount: rows.length,
+    columns: Object.keys(rows[0]),
+  }
+  uploadedTables.push(meta)
+  return meta
 }
 
 // ── Query runner ──────────────────────────────────────────────────────────────

@@ -1,16 +1,22 @@
-import { useState } from 'react'
-import { Moon, Sun, HelpCircle } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Moon, Sun, HelpCircle, Upload } from 'lucide-react'
 import type { Theme } from '@/hooks/useTheme'
+import type { UploadedTable } from '@/types'
 import { QuickStartModal } from '@/components/QuickStartModal'
 
 interface HeaderProps {
   theme: Theme
   onToggleTheme: () => void
   rowCount: number
+  uploadedCount: number
+  onUpload: (file: File) => void
+  uploadedTables: UploadedTable[]
 }
 
-export function Header({ theme, onToggleTheme, rowCount }: HeaderProps) {
+export function Header({ theme, onToggleTheme, rowCount, uploadedCount, onUpload, uploadedTables }: HeaderProps) {
   const [modalOpen, setModalOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const isDark  = theme === 'dark'
   const bg      = isDark ? 'rgba(11,18,32,0.95)' : 'rgba(245,248,240,0.95)'
   const border  = isDark ? '#142030' : '#ccd9b8'
@@ -19,6 +25,18 @@ export function Header({ theme, onToggleTheme, rowCount }: HeaderProps) {
   const primary = isDark ? '#a3e635' : '#4d7c0f'
   const pill    = isDark ? '#0e1928' : '#e2ebd6'
   const success = isDark ? '#34d399' : '#15803d'
+
+  const tableCount = 7 + uploadedCount
+  const pillLabel  = uploadedCount > 0 ? `${tableCount} tables` : '7 tables'
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      onUpload(file)
+      // reset so the same file can be re-selected if needed
+      e.target.value = ''
+    }
+  }
 
   return (
     <header
@@ -48,7 +66,7 @@ export function Header({ theme, onToggleTheme, rowCount }: HeaderProps) {
             className="text-[10px] font-semibold uppercase tracking-wider"
             style={{ fontFamily: 'var(--font-display)', color: muted }}
           >
-            7 tables
+            {pillLabel}
           </span>
           <span style={{ color: border, fontSize: 10 }}>·</span>
           <span className="text-[10px]" style={{ color: muted, fontFamily: 'var(--font-mono)' }}>
@@ -65,7 +83,30 @@ export function Header({ theme, onToggleTheme, rowCount }: HeaderProps) {
         NFL Draft Analytics · 1980 – Present
       </p>
 
+      {/* Right controls */}
       <div className="flex items-center gap-1">
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* Upload button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2 rounded-lg transition-colors"
+          style={{ color: muted }}
+          onMouseEnter={e => { e.currentTarget.style.background = pill; e.currentTarget.style.color = fg }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = muted }}
+          title="Upload CSV"
+        >
+          <Upload size={15} strokeWidth={2} />
+        </button>
+
         {/* Quick Start button */}
         <button
           onClick={() => setModalOpen(true)}
@@ -95,6 +136,8 @@ export function Header({ theme, onToggleTheme, rowCount }: HeaderProps) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         theme={theme}
+        uploadedTables={uploadedTables}
+        onUpload={onUpload}
       />
     </header>
   )

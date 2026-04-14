@@ -1,11 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Table2, Keyboard, BarChart2, Lightbulb } from 'lucide-react'
+import { X, Table2, Keyboard, BarChart2, Lightbulb, Upload, FileUp } from 'lucide-react'
+import type { UploadedTable } from '@/types'
 
 interface QuickStartModalProps {
   open: boolean
   onClose: () => void
   theme: 'light' | 'dark'
+  uploadedTables: UploadedTable[]
+  onUpload: (file: File) => void
 }
 
 interface ColDef { name: string; type: 'number' | 'text'; desc: string }
@@ -107,7 +110,7 @@ const SCHEMA: TableDef[] = [
 ]
 
 const STEPS = [
-  { n: '01', title: 'Write SQL', body: 'Query any of the 7 tables using standard SQL — SELECT, WHERE, GROUP BY, ORDER BY, LIMIT, JOIN, and aggregate functions are all supported.' },
+  { n: '01', title: 'Write SQL', body: 'Query any table using standard SQL — SELECT, WHERE, GROUP BY, ORDER BY, LIMIT, JOIN, and aggregate functions are all supported. Upload your own CSVs to add more tables.' },
   { n: '02', title: 'Run it',    body: 'Press ⌘↵ (Mac) or Ctrl+↵ (Windows) to execute, or click the Run Query button at the bottom of the editor.' },
   { n: '03', title: 'Visualize', body: 'Results appear instantly as a chart and a paginated table. Switch between Bar, Line, Area, and Pie charts and adjust the X / Y axes.' },
   { n: '04', title: 'Export',    body: 'Download your chart as a PNG image or export the raw result set as a CSV — use the Export menu in the chart controls toolbar.' },
@@ -121,8 +124,11 @@ const TIPS = [
   { code: "LIMIT 15",                                                      hint: 'Keep charts readable' },
 ]
 
-export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) {
+export function QuickStartModal({ open, onClose, theme, uploadedTables, onUpload }: QuickStartModalProps) {
   const isDark = theme === 'dark'
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDropping, setIsDropping] = useState(false)
+  const dropCounter = useRef(0)
 
   // Colors
   const overlay    = 'rgba(0,0,0,0.6)'
@@ -153,6 +159,32 @@ export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) 
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [open])
+
+  // Drop zone handlers (scoped to modal — don't fight App's global listener)
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dropCounter.current++
+    if (dropCounter.current === 1) setIsDropping(true)
+  }
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.stopPropagation()
+    dropCounter.current--
+    if (dropCounter.current === 0) setIsDropping(false)
+  }
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation() }
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dropCounter.current = 0
+    setIsDropping(false)
+    const file = e.dataTransfer.files[0]
+    if (file) onUpload(file)
+  }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) { onUpload(file); e.target.value = '' }
+  }
 
   if (!open) return null
 
@@ -198,6 +230,76 @@ export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-7">
 
+          {/* ── Upload your data ──────────────────── */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <FileUp size={13} style={{ color: primary }} />
+              <span
+                className="text-[11px] font-bold uppercase tracking-widest"
+                style={{ fontFamily: 'var(--font-display)', color: muted, letterSpacing: '0.18em' }}
+              >
+                Upload Your Data
+              </span>
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            {/* Drop zone */}
+            <div
+              className="rounded-xl flex flex-col items-center justify-center gap-3 px-6 py-7 cursor-pointer"
+              style={{
+                border: `2px dashed ${isDropping ? primary : border}`,
+                background: isDropping
+                  ? (isDark ? 'rgba(163,230,53,0.05)' : 'rgba(77,124,15,0.05)')
+                  : headerBg,
+                transition: 'border-color 0.15s ease, background 0.15s ease',
+              }}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background: isDark ? 'rgba(163,230,53,0.08)' : 'rgba(77,124,15,0.07)',
+                  border: `1px solid ${isDropping ? primary : border}`,
+                  transition: 'border-color 0.15s ease',
+                }}
+              >
+                <Upload size={18} style={{ color: primary }} />
+              </div>
+
+              <div className="text-center space-y-1">
+                <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: fg, letterSpacing: '0.03em' }}>
+                  Drag a CSV here, or{' '}
+                  <span style={{ color: primary, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                    browse
+                  </span>
+                </p>
+                <p className="text-[11px]" style={{ color: muted }}>
+                  Registers as a queryable table for this session · 50 MB max
+                </p>
+              </div>
+
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px]"
+                style={{ fontFamily: 'var(--font-mono)', background: codeBg, color: codeFg, border: `1px solid ${border}` }}
+              >
+                <span style={{ opacity: 0.5 }}>SELECT * FROM</span>
+                <span>your_file</span>
+              </div>
+            </div>
+          </section>
+
           {/* ── Schema ────────────────────────────── */}
           <section>
             <div className="flex items-center gap-2 mb-3">
@@ -212,7 +314,7 @@ export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) 
                 className="text-[10px] px-1.5 py-0.5 rounded-full ml-1"
                 style={{ fontFamily: 'var(--font-mono)', background: pillNum, border: `1px solid ${pillBorder}`, color: muted }}
               >
-                7 tables
+                {7 + uploadedTables.length} tables
               </span>
             </div>
 
@@ -292,6 +394,72 @@ export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) 
                 </details>
               ))}
             </div>
+
+            {/* ── Uploaded tables ──────────────────── */}
+            {uploadedTables.length > 0 && (
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center gap-2 mt-4 mb-2">
+                  <Upload size={11} style={{ color: primary }} />
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ fontFamily: 'var(--font-display)', color: muted, letterSpacing: '0.18em' }}
+                  >
+                    Uploaded this session
+                  </span>
+                </div>
+                {uploadedTables.map((tbl) => (
+                  <details
+                    key={tbl.name}
+                    className="group rounded-xl overflow-hidden"
+                    style={{ border: `1px solid ${primary}40` }}
+                  >
+                    <summary
+                      className="flex items-center gap-3 px-4 py-2.5 cursor-pointer list-none select-none"
+                      style={{ background: isDark ? 'rgba(163,230,53,0.05)' : 'rgba(77,124,15,0.05)' }}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                        className="shrink-0 transition-transform duration-200 group-open:rotate-90"
+                        style={{ color: muted }}
+                      >
+                        <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <code className="text-sm font-bold" style={{ fontFamily: 'var(--font-mono)', color: primary }}>
+                        {tbl.name}
+                      </code>
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full"
+                        style={{ fontFamily: 'var(--font-mono)', background: pillNum, border: `1px solid ${pillBorder}`, color: muted }}
+                      >
+                        {tbl.rowCount.toLocaleString()} rows
+                      </span>
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded ml-1"
+                        style={{ fontFamily: 'var(--font-display)', background: isDark ? 'rgba(163,230,53,0.1)' : 'rgba(77,124,15,0.08)', color: primary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                      >
+                        uploaded
+                      </span>
+                      <span className="text-[11px] ml-auto truncate max-w-[140px]" style={{ color: muted }}>
+                        {tbl.originalName}
+                      </span>
+                    </summary>
+                    <div
+                      className="px-4 py-2.5 flex flex-wrap gap-1.5"
+                      style={{ borderTop: `1px solid ${primary}30` }}
+                    >
+                      {tbl.columns.map((col) => (
+                        <code
+                          key={col}
+                          className="text-[10px] px-1.5 py-0.5 rounded"
+                          style={{ fontFamily: 'var(--font-mono)', background: codeBg, color: fg }}
+                        >
+                          {col}
+                        </code>
+                      ))}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* ── How it works ──────────────────────── */}
