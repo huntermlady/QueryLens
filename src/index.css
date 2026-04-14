@@ -1,0 +1,233 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+/* ── Class-based dark mode ─────────────── */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Tailwind theme (fonts + radius only) ── */
+@theme {
+  --font-sans:    'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', 'Cascadia Code', ui-monospace, monospace;
+  --radius:       0.5rem;
+  --radius-sm:    0.25rem;
+  --radius-lg:    0.75rem;
+}
+
+/* ── Light mode (field-green / daytime) ─── */
+:root {
+  --color-background:         #eef2e8;
+  --color-foreground:         #0d1a06;
+  --color-card:               #f5f8f0;
+  --color-card-foreground:    #0d1a06;
+  --color-popover:            #ffffff;
+  --color-popover-foreground: #0d1a06;
+  --color-primary:            #4d7c0f;
+  --color-primary-foreground: #ffffff;
+  --color-secondary:          #dce8cc;
+  --color-secondary-foreground: #2d4a0e;
+  --color-muted:              #e2ebd6;
+  --color-muted-foreground:   #5a7240;
+  --color-border:             #ccd9b8;
+  --color-input:              #ccd9b8;
+  --color-ring:               #65a30d;
+  --color-accent:             #b45309;
+  --color-accent-foreground:  #ffffff;
+  --color-destructive:        #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-success:            #15803d;
+  --color-warning:            #b45309;
+
+  /* Editor — always dark */
+  --color-editor-bg:         #04080f;
+  --color-editor-fg:         #bdd0ec;
+  --color-editor-border:     #182338;
+  --color-editor-gutter-bg:  #070d18;
+  --color-editor-gutter-fg:  #2e4a6e;
+  --color-editor-active:     rgba(163,230,53,0.05);
+  --color-editor-selection:  rgba(163,230,53,0.12);
+  --color-editor-cursor:     #a3e635;
+}
+
+/* ── Dark mode (night game) ─────────────── */
+.dark {
+  --color-background:         #060b15;
+  --color-foreground:         #cdd8ee;
+  --color-card:               #0b1220;
+  --color-card-foreground:    #cdd8ee;
+  --color-popover:            #0e1628;
+  --color-popover-foreground: #cdd8ee;
+  --color-primary:            #a3e635;
+  --color-primary-foreground: #0c1a00;
+  --color-secondary:          #101c30;
+  --color-secondary-foreground: #6a90b8;
+  --color-muted:              #0e1928;
+  --color-muted-foreground:   #3e5a7a;
+  --color-border:             #142030;
+  --color-input:              #142030;
+  --color-ring:               #a3e635;
+  --color-accent:             #f59e0b;
+  --color-accent-foreground:  #0c1a00;
+  --color-destructive:        #f87171;
+  --color-destructive-foreground: #450a0a;
+  --color-success:            #34d399;
+  --color-warning:            #fbbf24;
+}
+
+/* ── Base ───────────────────────────────── */
+*, *::before, *::after { border-color: var(--color-border); }
+
+/* ── Theme transition ───────────────────── */
+/*
+  Applies to inline-style changes too — React updates the style attribute
+  and the browser animates the delta if transition is declared via CSS.
+  More-specific rules (.run-btn, Tailwind utilities) override this safely.
+*/
+*, *::before, *::after {
+  transition:
+    background-color 0.22s ease,
+    color            0.18s ease,
+    border-color     0.22s ease,
+    fill             0.18s ease,
+    stroke           0.18s ease;
+}
+
+/* Preserve animation-only elements — don't add competing transitions */
+[class*="animate-"], .animate-spin, .animate-ping, .animate-pulse,
+.animate-bounce, .animate-shimmer, .animate-progress-fill {
+  transition: none;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Background texture (dark only) ────── */
+.dark body {
+  background-image: radial-gradient(circle, #1a2f4a 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Scrollbar ──────────────────────────── */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--color-border); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
+
+/* ── CodeMirror ─────────────────────────── */
+.cm-editor {
+  height: 100%;
+  font-family: var(--font-mono) !important;
+  font-size: 12.5px;
+  transition: background-color 0.22s ease !important;
+}
+.cm-editor.cm-focused { outline: none !important; }
+.cm-scroller {
+  overflow: auto;
+  font-family: var(--font-mono) !important;
+  transition: background-color 0.22s ease !important;
+}
+.cm-gutters {
+  min-width: 40px;
+  transition: background-color 0.22s ease, border-color 0.22s ease, color 0.18s ease !important;
+}
+.cm-gutterElement {
+  padding-left: 6px !important;
+  padding-right: 10px !important;
+  transition: color 0.18s ease !important;
+}
+.cm-content               { transition: background-color 0.22s ease, color 0.18s ease !important; }
+.cm-activeLine            { transition: background-color 0.22s ease !important; }
+.cm-activeLineGutter      { transition: background-color 0.22s ease !important; }
+.cm-selectionBackground   { transition: background-color 0.22s ease !important; }
+.cm-cursor                { transition: border-left-color 0.18s ease !important; }
+.cm-focused .cm-selectionBackground { transition: background-color 0.22s ease !important; }
+
+/* ── RUN button ─────────────────────────── */
+.run-btn {
+  background: linear-gradient(160deg, #84cc16 0%, #a3e635 50%, #bef264 100%);
+  color: #0a1400;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 0 0 0 rgba(163,230,53,0);
+  transition: box-shadow 0.25s ease, transform 0.1s ease, opacity 0.15s, background-color 0.22s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.run-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.run-btn:hover:not(:disabled) {
+  box-shadow:
+    0 0 18px rgba(163,230,53,0.5),
+    0 0 40px rgba(163,230,53,0.18),
+    0 4px 16px rgba(0,0,0,0.4);
+}
+.run-btn:active:not(:disabled) { transform: scale(0.97); }
+.run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Animations ─────────────────────────── */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -300% 0; }
+  100% { background-position:  300% 0; }
+}
+@keyframes progress-fill {
+  0%   { width: 0%; }
+  30%  { width: 45%; }
+  65%  { width: 72%; }
+  90%  { width: 88%; }
+  100% { width: 100%; }
+}
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+  40%           { opacity: 1;    transform: scale(1); }
+}
+
+.animate-slide-up      { animation: slide-up 0.35s ease both; }
+.animate-fade-in       { animation: fade-in  0.25s ease both; }
+.animate-progress-fill { animation: progress-fill 2.8s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-muted) 20%,
+    var(--color-border) 50%,
+    var(--color-muted) 80%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* ── Recharts ───────────────────────────── */
+.recharts-tooltip-wrapper { outline: none; }
+.recharts-legend-item-text {
+  font-size: 11px !important;
+  font-family: var(--font-sans) !important;
+  color: var(--color-muted-foreground) !important;
+}
