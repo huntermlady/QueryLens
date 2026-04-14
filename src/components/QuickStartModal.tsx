@@ -8,32 +8,117 @@ interface QuickStartModalProps {
   theme: 'light' | 'dark'
 }
 
-const COLUMNS = [
-  { name: 'season',   type: 'number', desc: 'Draft year (1980 – present)' },
-  { name: 'round',    type: 'number', desc: 'Round number (1 – 7)' },
-  { name: 'pick',     type: 'number', desc: 'Overall pick number' },
-  { name: 'team',     type: 'text',   desc: 'Team abbreviation, e.g. DAL' },
-  { name: 'pfr_name', type: 'text',   desc: 'Player name (Pro-Football-Reference)' },
-  { name: 'position', type: 'text',   desc: 'Position code (QB, WR, LB…)' },
-  { name: 'side',     type: 'text',   desc: '"offense" or "defense"' },
-  { name: 'category', type: 'text',   desc: 'Position group, e.g. "Skill Position"' },
-  { name: 'pfr_id',   type: 'text',   desc: 'Pro-Football-Reference player ID' },
-  { name: 'player_id',type: 'text',   desc: 'Internal player identifier' },
+interface ColDef { name: string; type: 'number' | 'text'; desc: string }
+interface TableDef { name: string; rows: string; desc: string; cols: ColDef[] }
+
+const SCHEMA: TableDef[] = [
+  {
+    name: 'draft_picks', rows: '~12,253', desc: 'NFL Draft selections 1980 – present',
+    cols: [
+      { name: 'season',    type: 'number', desc: 'Draft year' },
+      { name: 'round',     type: 'number', desc: 'Round number (1–7)' },
+      { name: 'pick',      type: 'number', desc: 'Overall pick number' },
+      { name: 'team',      type: 'text',   desc: 'Team abbreviation' },
+      { name: 'pfr_name',  type: 'text',   desc: 'Player name' },
+      { name: 'position',  type: 'text',   desc: 'Position code (QB, WR…)' },
+      { name: 'side',      type: 'text',   desc: '"offense" or "defense"' },
+      { name: 'category',  type: 'text',   desc: 'Position group' },
+      { name: 'pfr_id',    type: 'text',   desc: 'Pro-Football-Reference ID' },
+    ],
+  },
+  {
+    name: 'games', rows: '~6,500', desc: 'Game results, scores & betting lines',
+    cols: [
+      { name: 'season',        type: 'number', desc: 'Season year' },
+      { name: 'week',          type: 'number', desc: 'Week number' },
+      { name: 'game_type',     type: 'text',   desc: 'REG, WC, DIV, CON, SB' },
+      { name: 'away_team',     type: 'text',   desc: 'Away team abbreviation' },
+      { name: 'home_team',     type: 'text',   desc: 'Home team abbreviation' },
+      { name: 'away_score',    type: 'number', desc: 'Away team score' },
+      { name: 'home_score',    type: 'number', desc: 'Home team score' },
+      { name: 'spread_line',   type: 'number', desc: 'Opening spread' },
+      { name: 'total_line',    type: 'number', desc: 'Over/under total' },
+      { name: 'away_qb_name',  type: 'text',   desc: 'Starting QB (away)' },
+      { name: 'home_qb_name',  type: 'text',   desc: 'Starting QB (home)' },
+    ],
+  },
+  {
+    name: 'standings', rows: '~800', desc: 'Season W/L records by team',
+    cols: [
+      { name: 'season',   type: 'number', desc: 'Season year' },
+      { name: 'team',     type: 'text',   desc: 'Team abbreviation' },
+      { name: 'conf',     type: 'text',   desc: 'AFC or NFC' },
+      { name: 'division', type: 'text',   desc: 'Division name' },
+      { name: 'wins',     type: 'number', desc: 'Regular season wins' },
+      { name: 'losses',   type: 'number', desc: 'Regular season losses' },
+      { name: 'ties',     type: 'number', desc: 'Ties' },
+      { name: 'pct',      type: 'number', desc: 'Win percentage' },
+      { name: 'seed',     type: 'number', desc: 'Playoff seed (if applicable)' },
+    ],
+  },
+  {
+    name: 'rosters', rows: '~30,000', desc: 'Player roster entries by season & team',
+    cols: [
+      { name: 'season',    type: 'number', desc: 'Season year' },
+      { name: 'team',      type: 'text',   desc: 'Team abbreviation' },
+      { name: 'full_name', type: 'text',   desc: 'Player full name' },
+      { name: 'position',  type: 'text',   desc: 'Position code' },
+      { name: 'side',      type: 'text',   desc: '"O" (offense) or "D" (defense)' },
+      { name: 'category',  type: 'text',   desc: 'Position group' },
+      { name: 'games',     type: 'number', desc: 'Games played' },
+      { name: 'starts',    type: 'number', desc: 'Games started' },
+      { name: 'av',        type: 'number', desc: 'Approximate Value (PFR)' },
+      { name: 'pfr_id',    type: 'text',   desc: 'Pro-Football-Reference ID (join key)' },
+    ],
+  },
+  {
+    name: 'trades', rows: '~5,000', desc: 'Trade history between franchises',
+    cols: [
+      { name: 'season',     type: 'number', desc: 'Season of trade' },
+      { name: 'trade_date', type: 'text',   desc: 'Date of transaction' },
+      { name: 'gave',       type: 'text',   desc: 'Team that gave the asset' },
+      { name: 'received',   type: 'text',   desc: 'Team that received the asset' },
+      { name: 'pfr_name',   type: 'text',   desc: 'Player traded (if applicable)' },
+      { name: 'pick_season',type: 'number', desc: 'Year of pick traded' },
+      { name: 'pick_round', type: 'number', desc: 'Round of pick traded' },
+    ],
+  },
+  {
+    name: 'draft_values', rows: '~261', desc: 'Pick value models keyed on pick number',
+    cols: [
+      { name: 'pick',    type: 'number', desc: 'Overall pick number (JOIN key)' },
+      { name: 'stuart',  type: 'number', desc: 'Stuart pick value model' },
+      { name: 'johnson', type: 'number', desc: 'Johnson pick value model' },
+      { name: 'hill',    type: 'number', desc: 'Hill pick value model' },
+      { name: 'otc',     type: 'number', desc: 'Over The Cap value model' },
+      { name: 'pff',     type: 'number', desc: 'PFF pick value model' },
+    ],
+  },
+  {
+    name: 'win_totals', rows: '~400', desc: 'Preseason over/under win total lines',
+    cols: [
+      { name: 'season',     type: 'number', desc: 'Season year' },
+      { name: 'team',       type: 'text',   desc: 'Team abbreviation' },
+      { name: 'line',       type: 'number', desc: 'Projected win total' },
+      { name: 'over_odds',  type: 'number', desc: 'Moneyline odds for the over' },
+      { name: 'under_odds', type: 'number', desc: 'Moneyline odds for the under' },
+    ],
+  },
 ]
 
 const STEPS = [
-  { n: '01', title: 'Write SQL', body: 'Query the draft_picks table using standard SQL — SELECT, WHERE, GROUP BY, ORDER BY, LIMIT, and aggregate functions are all supported.' },
+  { n: '01', title: 'Write SQL', body: 'Query any of the 7 tables using standard SQL — SELECT, WHERE, GROUP BY, ORDER BY, LIMIT, JOIN, and aggregate functions are all supported.' },
   { n: '02', title: 'Run it',    body: 'Press ⌘↵ (Mac) or Ctrl+↵ (Windows) to execute, or click the Run Query button at the bottom of the editor.' },
   { n: '03', title: 'Visualize', body: 'Results appear instantly as a chart and a paginated table. Switch between Bar, Line, Area, and Pie charts and adjust the X / Y axes.' },
   { n: '04', title: 'Export',    body: 'Download your chart as a PNG image or export the raw result set as a CSV — use the Export menu in the chart controls toolbar.' },
 ]
 
 const TIPS = [
-  { code: "GROUP BY season ORDER BY season ASC", hint: 'Time-series → use Line or Area chart' },
-  { code: "GROUP BY position ORDER BY picks DESC", hint: 'Categorical breakdown → use Bar or Pie' },
-  { code: "WHERE position = 'QB' AND season >= 2000", hint: 'Filter before aggregating' },
-  { code: "SUM(CASE WHEN round = 1 THEN 1 ELSE 0 END)", hint: 'Conditional counts with CASE WHEN' },
-  { code: "LIMIT 15", hint: 'Keep charts readable — cap results' },
+  { code: "JOIN standings s ON d.team = s.team AND d.season = s.season", hint: 'Join across tables on team + season' },
+  { code: "JOIN draft_values v ON d.pick = v.pick",                       hint: 'Enrich picks with value models' },
+  { code: "GROUP BY season ORDER BY season ASC",                          hint: 'Time-series → Line or Area chart' },
+  { code: "SUM(CASE WHEN round = 1 THEN 1 ELSE 0 END)",                   hint: 'Conditional aggregation' },
+  { code: "LIMIT 15",                                                      hint: 'Keep charts readable' },
 ]
 
 export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) {
@@ -121,72 +206,91 @@ export function QuickStartModal({ open, onClose, theme }: QuickStartModalProps) 
                 className="text-[11px] font-bold uppercase tracking-widest"
                 style={{ fontFamily: 'var(--font-display)', color: muted, letterSpacing: '0.18em' }}
               >
-                Available Table
+                Available Tables
+              </span>
+              <span
+                className="text-[10px] px-1.5 py-0.5 rounded-full ml-1"
+                style={{ fontFamily: 'var(--font-mono)', background: pillNum, border: `1px solid ${pillBorder}`, color: muted }}
+              >
+                7 tables
               </span>
             </div>
 
-            <div
-              className="rounded-xl overflow-hidden"
-              style={{ border: `1px solid ${border}` }}
-            >
-              {/* Table name pill */}
-              <div
-                className="flex items-center gap-3 px-4 py-2.5"
-                style={{ background: headerBg, borderBottom: `1px solid ${border}` }}
-              >
-                <code
-                  className="text-sm font-bold"
-                  style={{ fontFamily: 'var(--font-mono)', color: primary }}
+            <div className="space-y-2">
+              {SCHEMA.map((tbl) => (
+                <details
+                  key={tbl.name}
+                  className="group rounded-xl overflow-hidden"
+                  style={{ border: `1px solid ${border}` }}
                 >
-                  draft_picks
-                </code>
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full"
-                  style={{ fontFamily: 'var(--font-mono)', background: pillNum, border: `1px solid ${pillBorder}`, color: muted }}
-                >
-                  12,253 rows
-                </span>
-              </div>
-
-              {/* Column list */}
-              <table className="w-full text-xs">
-                <thead>
-                  <tr style={{ borderBottom: `1px solid ${border}`, background: headerBg }}>
-                    <th className="px-4 py-2 text-left" style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: muted }}>Column</th>
-                    <th className="px-4 py-2 text-left" style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: muted }}>Type</th>
-                    <th className="px-4 py-2 text-left" style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: muted }}>Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {COLUMNS.map((col, i) => (
-                    <tr
-                      key={col.name}
-                      style={{ background: i % 2 !== 0 ? rowAlt : 'transparent', borderBottom: i < COLUMNS.length - 1 ? `1px solid ${border}` : 'none' }}
+                  {/* Table header row — click to expand */}
+                  <summary
+                    className="flex items-center gap-3 px-4 py-2.5 cursor-pointer list-none select-none"
+                    style={{ background: headerBg }}
+                  >
+                    {/* Chevron */}
+                    <svg
+                      width="10" height="10" viewBox="0 0 10 10" fill="none"
+                      className="shrink-0 transition-transform duration-200 group-open:rotate-90"
+                      style={{ color: muted }}
                     >
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <code style={{ fontFamily: 'var(--font-mono)', color: fg, fontSize: 11 }}>{col.name}</code>
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <span
-                          className="text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            color: col.type === 'number' ? typeNum : typeText,
-                            background: col.type === 'number'
-                              ? (isDark ? 'rgba(251,191,36,0.1)' : 'rgba(180,83,9,0.08)')
-                              : (isDark ? 'rgba(52,211,153,0.1)' : 'rgba(13,107,69,0.08)'),
-                          }}
+                      <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <code className="text-sm font-bold" style={{ fontFamily: 'var(--font-mono)', color: primary }}>
+                      {tbl.name}
+                    </code>
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ fontFamily: 'var(--font-mono)', background: pillNum, border: `1px solid ${pillBorder}`, color: muted }}
+                    >
+                      {tbl.rows} rows
+                    </span>
+                    <span className="text-[11px] ml-auto" style={{ color: muted, fontFamily: 'var(--font-sans)' }}>
+                      {tbl.desc}
+                    </span>
+                  </summary>
+
+                  {/* Column list */}
+                  <table className="w-full text-xs" style={{ borderTop: `1px solid ${border}` }}>
+                    <thead>
+                      <tr style={{ background: headerBg, borderBottom: `1px solid ${border}` }}>
+                        <th className="px-4 py-1.5 text-left" style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: muted }}>Column</th>
+                        <th className="px-4 py-1.5 text-left" style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: muted }}>Type</th>
+                        <th className="px-4 py-1.5 text-left" style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: muted }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tbl.cols.map((col, i) => (
+                        <tr
+                          key={col.name}
+                          style={{ background: i % 2 !== 0 ? rowAlt : 'transparent', borderBottom: i < tbl.cols.length - 1 ? `1px solid ${border}` : 'none' }}
                         >
-                          {col.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2" style={{ color: muted, fontFamily: 'var(--font-sans)', fontSize: 11 }}>
-                        {col.desc}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <td className="px-4 py-1.5 whitespace-nowrap">
+                            <code style={{ fontFamily: 'var(--font-mono)', color: fg, fontSize: 11 }}>{col.name}</code>
+                          </td>
+                          <td className="px-4 py-1.5 whitespace-nowrap">
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase"
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                color: col.type === 'number' ? typeNum : typeText,
+                                background: col.type === 'number'
+                                  ? (isDark ? 'rgba(251,191,36,0.1)' : 'rgba(180,83,9,0.08)')
+                                  : (isDark ? 'rgba(52,211,153,0.1)' : 'rgba(13,107,69,0.08)'),
+                              }}
+                            >
+                              {col.type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-1.5" style={{ color: muted, fontFamily: 'var(--font-sans)', fontSize: 11 }}>
+                            {col.desc}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </details>
+              ))}
             </div>
           </section>
 

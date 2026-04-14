@@ -48,7 +48,7 @@ export function Header({ theme, onToggleTheme, rowCount }: HeaderProps) {
             className="text-[10px] font-semibold uppercase tracking-wider"
             style={{ fontFamily: 'var(--font-display)', color: muted }}
           >
-            draft_picks
+            7 tables
           </span>
           <span style={{ color: border, fontSize: 10 }}>·</span>
           <span className="text-[10px]" style={{ color: muted, fontFamily: 'var(--font-mono)' }}>

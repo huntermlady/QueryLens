@@ -1,26 +1,18 @@
 import { useState, useCallback } from 'react'
 import { Toaster } from 'sonner'
-import alasql from 'alasql'
 import { Header } from '@/components/Header'
 import { SqlEditor } from '@/components/SqlEditor'
 import { ResultsPanel } from '@/components/ResultsPanel'
 import { useQueryRunner } from '@/hooks/useQueryRunner'
 import { useTheme } from '@/hooks/useTheme'
 import { exampleQueries, DEFAULT_QUERY } from '@/data/exampleQueries'
-
-function getRowCount(): number {
-  try {
-    return (alasql.tables as Record<string, { data: unknown[] }>).draft_picks?.data?.length ?? 0
-  } catch {
-    return 0
-  }
-}
+import { rowCounts, TABLES } from '@/utils/queryEngine'
 
 function App() {
   const [query, setQuery] = useState(DEFAULT_QUERY)
   const { theme, toggle } = useTheme()
   const { status, result, error, chartConfig, run, updateChartConfig } = useQueryRunner()
-  const rowCount = getRowCount()
+  const rowCount = TABLES.reduce((sum, t) => sum + (rowCounts[t.name] ?? 0), 0)
   const isDark = theme === 'dark'
 
   const bg     = isDark ? '#060b15' : '#eef2e8'
@@ -28,7 +20,7 @@ function App() {
 
   const handleRun = useCallback(() => run(query), [run, query])
   const handleSelectExample = useCallback((sql: string) => { setQuery(sql); run(sql) }, [run])
-  const handleRunExample = useCallback(() => handleSelectExample(exampleQueries[3].sql), [handleSelectExample])
+  const handleRunExample = useCallback(() => handleSelectExample(exampleQueries[0].sql), [handleSelectExample])
 
   return (
     <div className="flex flex-col h-full" style={{ background: bg }}>
