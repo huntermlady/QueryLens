@@ -31,13 +31,15 @@ jobs:
         run: npm run build
 
   deploy:
-    name: Deploy to GitHub Pages
-    if: github.ref_name == 'main'
+    name: Build and publish docs
+    if: github.ref_name == 'main' && github.actor != 'github-actions[bot]'
     needs: build
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Use Node.js
         uses: actions/setup-node@v5
@@ -51,9 +53,20 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
-      - name: Deploy dist to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: gh-pages
+      - name: Copy build to docs folder
+        run: |
+          rm -rf docs
+          mkdir -p docs
+          cp -a dist/. docs/
+
+      - name: Commit docs update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- docs; then
+            git add docs
+            git commit -m "ci: update docs site"
+            git push origin HEAD
+          else
+            echo "No docs changes to commit"
+          fi
