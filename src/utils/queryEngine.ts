@@ -38,7 +38,7 @@ function coerce(value: string): string | number | null {
 // ── Load one table ────────────────────────────────────────────────────────────
 
 async function loadTable(table: TableMeta): Promise<number> {
-  const response = await fetch(`/${table.file}`)
+  const response = await fetch(`${import.meta.env.BASE_URL}${table.file}`)
   if (!response.ok) throw new Error(`Failed to fetch ${table.file}: ${response.statusText}`)
   const text = await response.text()
 
