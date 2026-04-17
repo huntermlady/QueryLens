@@ -64,8 +64,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- docs; then
-            git add docs
+          git add docs
+          if ! git diff --cached --quiet -- docs; then
             git commit -m "ci: update docs site"
             git push origin HEAD
           else
